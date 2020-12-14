@@ -1,0 +1,16 @@
+# An example systemd service file for SCAS
+
+[Unit]
+Description=Stream Clustering Algorithm for Suricata (SCAS)
+After=syslog.target
+
+[Service]
+PIDFile=/run/scas.pid
+SyslogIdentifier=scas
+Environment="PERL_JSON_BACKEND=Cpanel::JSON::XS,JSON::XS,JSON::PP"
+IgnoreSIGPIPE=no
+ExecStart=/bin/bash -c "tail -F /var/log/suricata/eve.json | /usr/local/bin/scas-group.pl --homenet=192.168.1.0/24 | /usr/local/bin/scas-cluster.pl --syslog-tag=scas --alpha=0.01 --statefile=/var/lib/scas/scas.state --dumpdir=/var/lib/scas --pid=/run/scas.pid"
+
+[Install]
+WantedBy=multi-user.target
+

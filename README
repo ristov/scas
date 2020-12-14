@@ -1,0 +1,86 @@
+SCAS 0.01
+
+
+Introduction
+------------
+SCAS (Stream Clustering Algorithm for Suricata) is a stream clustering 
+algorithm designed for classifying Suricata IDS alerts in EVE format 
+in real time, and mining frequent alert patterns that represent commmon 
+attack scenarios of low importance.
+
+The SCAS source tarball contains the following tools:
+
+scas-group - a tool for reading Suricata IDS alerts in EVE format and
+             creating alert groups from incoming alerts in real time
+scas-cluster - a tool for receiving alert groups from the scas-group tool
+               and clustering incoming alert groups in real time
+scas-print - a tool for printing the internal state of the scas-cluster tool 
+             in human readable format
+
+SCAS has been written in Perl and has been tested on Linux, but it
+should run on any platform with a recent Perl distribution. It requires
+POSIX, Storable, Sys::Syslog, and Getopt::Long modules which are included
+in the standard Perl installation on Linux, and also Net::CIDR::Lite and 
+JSON modules which have to be installed separately. Since the JSON module 
+is a wrapper that selects the fastest backend module from available 
+alternatives (e.g., JSON:PP from the standard Perl distribution), you can 
+install a more efficient backend module (e.g., Cpanel::JSON::XS or JSON::XS) 
+for improving the performance of SCAS. Also, the backend module selection 
+process can be controlled with the PERL_JSON_BACKEND environment variable.
+
+
+Availability and licensing
+--------------------------
+SCAS is available from https://ristov.github.io/scas, and is distributed under
+the terms of GNU General Public License version 2 (see the file COPYING).
+
+
+Installation
+------------
+After unpacking the source tarball, copy the scas-group.pl, scas-cluster.pl,
+and scas-print.pl tools to appropriate directory (e.g., /usr/local/bin).
+Also, if you are running SCAS on a Linux host with systemd, consider using
+the scas.service file for running SCAS as a systemd service.
+
+
+Help on usage
+-------------
+Execute each tool with the '--help' command line option for seeing detailed 
+help on usage and command line options.
+
+
+Usage example
+-------------
+Run the following command line for clustering Suricata IDS alerts from
+/var/log/suricata/eve.log in real time, so that results are logged to
+syslog with the syslog tag 'scas': 
+
+tail -F /var/log/suricata/eve.json | scas-group.pl --homenet=192.168.1.0/24 | scas-cluster.pl --alpha=0.01 --syslog-tag=scas --statefile=/var/lib/scas/scas.state --dumpdir=/var/lib/scas --pid=/run/scas.pid
+
+With the above command line, the clustering state is written to 
+/var/lib/scas/scas.state when the scas-cluster tool terminates, and restored 
+from that file when scas-cluster restarts. The process ID of the scas-cluster 
+tool is written to /run/scas.pid, and the /var/lib/scas directory is used for 
+dumping the cluster and cluster candidate information to disk.
+
+For seeing human-readable information about detected clusters and current
+cluster candidates, send the USR2 signal to the scas-cluster process, so
+that the /var/lib/scas/scas.state file would be updated with the current
+state:
+
+kill -USR2 `cat /run/scas.pid`
+
+After that, use the scas-print tool for printing clusters and candidates in 
+a human readable format:
+
+scas-print.pl --statefile=/var/lib/scas/scas.state
+scas-print.pl --statefile=/var/lib/scas/scas.state --candidates
+
+As an alternative, send the USR1 signal to scas-cluster process, and inspect
+clusters.txt and candidates.txt files in the /var/lib/scas directory.
+
+
+Author
+------
+Risto Vaarandi (ristov at users d0t s0urcef0rge d0t net)
+
