@@ -244,13 +244,13 @@ in the alert group. If the alert group has an attribute value that is not
 present as a key in corresponding attribute table, new key is created and 
 initialized to I (provided with --attrkey-init-value=I option).
 
-Before an alert group is merged with its cluster, the similarity between
-the cluster and alert group is calculated. This involves extracting all
-values for each attribute of each signature from the alert group, and using
-them as keys for retrieving frequency values from corresponding attribute 
-tables. If the key is not present, frequency value of 0 is assumed.
-The similarity is then calculated as an average of frequency values over
-all attributes and signatures. 
+Before an alert group is merged with its cluster centroid, the similarity 
+between the alert group and its centroid is calculated. This involves 
+extracting all values for each attribute of each signature from the alert 
+group, and using them as keys for retrieving frequency values from 
+corresponding attribute tables. If the key is not present, frequency value 
+of 0 is assumed. The similarity is then calculated as an average of frequency 
+values over all attributes and signatures. 
 
 For example, suppose that the alert group comes in which contains data for 
 two signatures S1 and S2 that have two attributes ExternalIP and InternalIP.
@@ -322,13 +322,25 @@ For the entire alert group of two signatures, the similarity would be:
 
 (0.625 + 0.3) / 2 = 0.4625
 
-The similarity between alert group and its cluster ranges from 0 to 1, with 
-values close to 1 indicating that the attribute values of the alert group 
-have been frequently seen in the past, while lower similarity values indicate 
-the presence of unusual attribute values. Since the similarity value -1 is 
-assigned to outlier alert groups, alert groups with lower similarity scores 
-under some user-defined threshold (e.g., 0.5) represent unusual alert groups
-which deserve closer attention from human analysts.
+The similarity between alert group and its cluster centroid ranges from 0 
+to 1, with values close to 1 indicating that the attribute values of the alert 
+group have been frequently seen in the past, while lower similarity values 
+indicate the presence of unusual attribute values. Since the similarity score
+of -1 is assigned to outlier alert groups, alert groups with lower similarity 
+scores under some user-defined threshold (e.g., 0.5) represent unusual alert 
+groups which deserve closer attention from human analysts.
+
+After the similarity score has been calculated for the alert group, it
+will be written together with its similarity score to all outputs in JSON 
+format. The outputs are configured with --output and --syslog-tag options.
+
+Also, detected cluster centroids represent frequent alert patterns, and
+in order to output them in human readable format, send the scas-cluster
+process the USR1 signal (both the cluster and candidate centroids will be
+written to the directory provided with --dumpdir option). Note that when 
+the scas-cluster process receives the USR2 signal and has been started with 
+--statefile option, it will create its state file, and cluster centroid 
+information can be printed from the state file with the scas-print tool.
 
 !;
 
@@ -672,7 +684,7 @@ sub find_similarity {
 sub format_alert_group {
 
   my($ref) = $_[0];
-  my($ref2, $sig, $attr, $ptr, $sigdata, $json, $i);
+  my($ref2, $sig, $attr, $ptr, $sigdata, $json);
 
   # create an output JSON data structure for alert group (force numeric 
   # context for numbers, in order to ensure their proper appearance in JSON)
@@ -683,6 +695,7 @@ sub format_alert_group {
             "SignatureCount" => scalar(keys %{$ref->{"Signatures"}}),
             "Similarity" => $ref->{"Similarity"} + 0,
             "Similarity_int" => int($ref->{"Similarity"} * 100),
+            "AlertData" => [],
             "Alerts" => [] };
 
   if ($expsimilarity) {
@@ -690,8 +703,6 @@ sub format_alert_group {
     $ref2->{"Similarity2"} = $ref->{"Similarity2"} + 0;
     $ref2->{"Similarity2_int"} = int($ref->{"Similarity2"} * 100);
   }
-
-  $i = 1;
 
   foreach $sig (sort keys %{$ref->{"Signatures"}}) {
 
@@ -717,6 +728,12 @@ sub format_alert_group {
       }
     }
 
+    # store external IP address as a separate JSON field
+
+    if (!exists($ref2->{"ExtIP"})) {
+      $ref2->{"ExtIP"} = $sigdata->{"ExtIP"}->[0];
+    }
+
     # store similarity data for individual attributes to JSON
     # (not done if alert group is an outlier, since for outliers
     # there are no similarity data for individual attributes)
@@ -733,18 +750,17 @@ sub format_alert_group {
       }
     }
 
-    $ref2->{"Alert$i"} = $sigdata;
-
-    ++$i;
+    push @{$ref2->{"AlertData"}}, $sigdata;
   }
 
   # create a textual string from all signature texts, and store it to JSON
 
   $ref2->{"AlertGroup"} = join(", ", @{$ref2->{"Alerts"}});
 
-  # convert stored data to JSON string and return it
+  # convert stored data to JSON string (canonical-option forces the sorting 
+  # of field names in the string), and return the JSON string
 
-  eval { $json = encode_json($ref2); };
+  eval { $json = JSON->new->utf8->canonical->encode($ref2); };
 
   if ($@) {
     print STDERR "Can't create JSON data structure: $@\n";

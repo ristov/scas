@@ -70,8 +70,8 @@ state:
 
 kill -USR2 `cat /run/scas.pid`
 
-After that, use the scas-print tool for printing clusters and candidates in 
-a human readable format:
+After that, use the scas-print tool for printing the cluster and candidate 
+centroids in a human readable format:
 
 scas-print.pl --statefile=/var/lib/scas/scas.state
 scas-print.pl --statefile=/var/lib/scas/scas.state --candidates
