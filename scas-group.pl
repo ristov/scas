@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# scas-group 0.01 - scas-group.pl
+# scas-group 0.02 - scas-group.pl
 # Copyright (C) 2020 Risto Vaarandi
 #
 # This program is free software; you can redistribute it and/or
@@ -167,7 +167,7 @@ sub get_options {
   }
 
   if ($version) {
-    print "scas-group version 0.01, Copyright (C) 2020 Risto Vaarandi\n";
+    print "scas-group version 0.02, Copyright (C) 2020 Risto Vaarandi\n";
     exit(0);
   }
 

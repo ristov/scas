@@ -1,5 +1,4 @@
-SCAS 0.01
-
+SCAS 0.02
 
 Introduction
 ------------
@@ -28,12 +27,10 @@ install a more efficient backend module (e.g., Cpanel::JSON::XS or JSON::XS)
 for improving the performance of SCAS. Also, the backend module selection 
 process can be controlled with the PERL_JSON_BACKEND environment variable.
 
-
 Availability and licensing
 --------------------------
 SCAS is available from https://ristov.github.io/scas, and is distributed under
 the terms of GNU General Public License version 2 (see the file COPYING).
-
 
 Installation
 ------------
@@ -42,12 +39,10 @@ and scas-print.pl tools to appropriate directory (e.g., /usr/local/bin).
 Also, if you are running SCAS on a Linux host with systemd, consider using
 the scas.service file for running SCAS as a systemd service.
 
-
 Help on usage
 -------------
 Execute each tool with the '--help' command line option for seeing detailed 
 help on usage and command line options.
-
 
 Usage example
 -------------
@@ -78,7 +73,6 @@ scas-print.pl --statefile=/var/lib/scas/scas.state --candidates
 
 As an alternative, send the USR1 signal to scas-cluster process, and inspect
 clusters.txt and candidates.txt files in the /var/lib/scas directory.
-
 
 Author
 ------

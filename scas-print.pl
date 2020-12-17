@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# scas-print 0.01 - scas-print.pl
+# scas-print 0.02 - scas-print.pl
 # Copyright (C) 2020 Risto Vaarandi
 #
 # This program is free software; you can redistribute it and/or
@@ -100,7 +100,7 @@ sub get_options {
   }
 
   if ($version) {
-    print "scas-print version 0.01, Copyright (C) 2020 Risto Vaarandi\n";
+    print "scas-print version 0.02, Copyright (C) 2020 Risto Vaarandi\n";
     exit(0);
   }
 

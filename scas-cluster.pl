@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# scas-cluster 0.01 - scas-cluster.pl
+# scas-cluster 0.02 - scas-cluster.pl
 # Copyright (C) 2020 Risto Vaarandi
 #
 # This program is free software; you can redistribute it and/or
@@ -404,7 +404,7 @@ sub get_options {
   }
 
   if ($version) {
-    print "scas-cluster version 0.01, Copyright (C) 2020 Risto Vaarandi\n";
+    print "scas-cluster version 0.02, Copyright (C) 2020 Risto Vaarandi\n";
     exit(0);
   }
 
