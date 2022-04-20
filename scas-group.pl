@@ -1,7 +1,7 @@
 #!/usr/bin/perl -w
 #
-# scas-group 0.02 - scas-group.pl
-# Copyright (C) 2020 Risto Vaarandi
+# scas-group 0.03 - scas-group.pl
+# Copyright (C) 2020-2022 Risto Vaarandi
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -167,7 +167,7 @@ sub get_options {
   }
 
   if ($version) {
-    print "scas-group version 0.02, Copyright (C) 2020 Risto Vaarandi\n";
+    print "scas-group version 0.03, Copyright (C) 2020-2022 Risto Vaarandi\n";
     exit(0);
   }
 
@@ -457,6 +457,22 @@ sub process_ssh_alert {
 
   if (exists($ref->{"ssh"}->{"server"}->{"software_version"})) {
     $attref->{"SshServerSoftware"}->{$ref->{"ssh"}->{"server"}->{"software_version"}} = 1;
+  }
+
+  if (!exists($attref->{"SshClientProto"})) {
+    $attref->{"SshClientProto"} = {};
+  }
+
+  if (exists($ref->{"ssh"}->{"client"}->{"proto_version"})) {
+    $attref->{"SshClientProto"}->{$ref->{"ssh"}->{"client"}->{"proto_version"}} = 1;
+  }
+
+  if (!exists($attref->{"SshClientSoftware"})) {
+    $attref->{"SshClientSoftware"} = {};
+  }
+
+  if (exists($ref->{"ssh"}->{"client"}->{"software_version"})) {
+    $attref->{"SshClientSoftware"}->{$ref->{"ssh"}->{"client"}->{"software_version"}} = 1;
   }
 
 }
