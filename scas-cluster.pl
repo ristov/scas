@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# scas-cluster 0.03 - scas-cluster.pl
+# scas-cluster 0.04 - scas-cluster.pl
 # Copyright (C) 2020-2022 Risto Vaarandi
 #
 # This program is free software; you can redistribute it and/or
@@ -56,6 +56,7 @@ use vars qw(
   $pid_file
   $reopen_output
   $scantime
+  %sigstats
   $sleeptime
   $statefile
   $syslog_facility
@@ -404,7 +405,7 @@ sub get_options {
   }
 
   if ($version) {
-    print "scas-cluster version 0.03, Copyright (C) 2020-2022 Risto Vaarandi\n";
+    print "scas-cluster version 0.04, Copyright (C) 2020-2022 Risto Vaarandi\n";
     exit(0);
   }
 
@@ -680,19 +681,23 @@ sub find_similarity {
 
 
 # function for creating JSON string for outputting the alert group
+# (note that numeric context is forced for numeric fields by adding 0,
+# in order to ensure they will appear as numeric fields in JSON)
 
 sub format_alert_group {
 
   my($ref) = $_[0];
   my($ref2, $sig, $attr, $ptr, $sigdata, $json);
+  my($time, $days, $daily_matches, $min, $max);
 
-  # create an output JSON data structure for alert group (force numeric 
-  # context for numbers, in order to ensure their proper appearance in JSON)
+  $time = time();
+
+  # create an output JSON data structure for alert group  
 
   $ref2 = { "CreationTime" => $ref->{"CreationTime"} + 0,
             "CreationTimeText" => scalar(localtime($ref->{"CreationTime"})),
             "EventCount" => $ref->{"Events"} + 0,
-            "SignatureCount" => scalar(keys %{$ref->{"Signatures"}}),
+            "SignatureCount" => scalar(keys %{$ref->{"Signatures"}}) + 0,
             "Similarity" => $ref->{"Similarity"} + 0,
             "Similarity_int" => int($ref->{"Similarity"} * 100),
             "AlertData" => [],
@@ -706,15 +711,37 @@ sub format_alert_group {
 
   foreach $sig (sort keys %{$ref->{"Signatures"}}) {
 
+    $ptr = $ref->{"Signatures"}->{$sig};
+
+    # update signature match statistics with the data from alert group
+    # and calculate average matches per day for the given signature
+
+    if (!exists($sigstats{$sig})) {
+      $sigstats{$sig} = { "Time" => $time, "Matches" => 0, 
+                          "SignatureText" => $ptr->{"Signature"} };
+    }
+
+    $sigstats{$sig}->{"Matches"} += $ptr->{"Events"};
+
+    $days = ($time - $sigstats{$sig}->{"Time"}) / 86400;
+
+    if ($days >= 1) { 
+      $daily_matches = $sigstats{$sig}->{"Matches"} / $days;
+    } else {
+      $daily_matches = 0;
+    }
+
+    if (!defined($min) || $daily_matches < $min) { $min = $daily_matches; }
+    if (!defined($max) || $daily_matches > $max) { $max = $daily_matches; }
+
     # store data for each signature in the alert group to JSON
     # ($sigdata is a reference to data that is stored to JSON)
-
-    $ptr = $ref->{"Signatures"}->{$sig};
 
     push @{$ref2->{"Alerts"}}, $ptr->{"Signature"};
 
     $sigdata = { "SignatureText" => $ptr->{"Signature"},
-                 "SignatureID" => $sig };
+                 "SignatureID" => $sig,
+                 "SignatureMatchesPerDay" => $daily_matches + 0 };
 
     # if the attribute is basic that every signature has (Proto, IntIP, 
     # ExtIP, IntPort and ExtPort), store attribute values to JSON
@@ -752,6 +779,12 @@ sub format_alert_group {
 
     push @{$ref2->{"AlertData"}}, $sigdata;
   }
+
+  # store daily match statistics for the least matching and most matching
+  # signature into the alert group 
+
+  $ref2->{"SignatureMatchesPerDayMin"} = $min + 0;
+  $ref2->{"SignatureMatchesPerDayMax"} = $max + 0;
 
   # create a textual string from all signature texts, and store it to JSON
 
@@ -1113,6 +1146,7 @@ sub read_state_file {
 
   %candidates = %{$ref->{"Candidates"}};
   %clusters = %{$ref->{"Clusters"}};
+  %sigstats = %{$ref->{"SignatureStats"}};
 }
 
 
@@ -1122,7 +1156,9 @@ sub write_state_file {
 
   my($ref, $ret);
 
-  $ref = { "Candidates" => \%candidates, "Clusters" => \%clusters };
+  $ref = { "Candidates" => \%candidates, 
+           "Clusters" => \%clusters,
+           "SignatureStats" => \%sigstats };
 
   $ret = eval { store($ref, $statefile) };
 

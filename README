@@ -1,4 +1,4 @@
-SCAS 0.03
+SCAS 0.04
 
 Introduction
 ------------
@@ -22,7 +22,7 @@ POSIX, Storable, Sys::Syslog, and Getopt::Long modules which are included
 in the standard Perl installation on Linux, and also Net::CIDR::Lite and 
 JSON modules which have to be installed separately. Since the JSON module 
 is a wrapper that selects the fastest backend module from available 
-alternatives (e.g., JSON:PP from the standard Perl distribution), you can 
+alternatives (e.g., JSON::PP from the standard Perl distribution), you can 
 install a more efficient backend module (e.g., Cpanel::JSON::XS or JSON::XS) 
 for improving the performance of SCAS. Also, the backend module selection 
 process can be controlled with the PERL_JSON_BACKEND environment variable.

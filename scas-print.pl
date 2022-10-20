@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# scas-print 0.03 - scas-print.pl
+# scas-print 0.04 - scas-print.pl
 # Copyright (C) 2020-2022 Risto Vaarandi
 #
 # This program is free software; you can redistribute it and/or
@@ -31,6 +31,8 @@ use vars qw(
   %candidates
   %clusters
   $entropy
+  $sigstats
+  %sigstats
   $statefile
 );
 
@@ -55,6 +57,10 @@ Options:
 
     Print cluster candidates instead of clusters.
 
+  --sigstats
+
+    Print signature match statistics instead of clusters.
+
   --help, -?
 
     Print the usage information.
@@ -64,10 +70,11 @@ Options:
     Print the version information.
 
 
-The scas-print tool reads cluster and candidate information from the state 
-file provided with the --statefile option, and prints clusters or candidates
-in a human readable format to standard output. It is assumed that the state 
-file has been produced by the scas-cluster tool.
+The scas-print tool reads cluster information, candidate information, and
+signature match statistics from the state file provided with the --statefile 
+option, and prints clusters, candidates, or signature match statistics in 
+a human readable format to standard output. It is assumed that the state file 
+has been produced by the scas-cluster tool.
 
 !;
 
@@ -82,8 +89,9 @@ sub get_options {
   }
 
   $attrtable = 50;
-  $candidates = 0;
   $entropy = 0.8;
+  $candidates = 0;
+  $sigstats = 0;
   $help = 0;
   $version = 0;
 
@@ -91,6 +99,7 @@ sub get_options {
               "entropy=f" => \$entropy,
               "statefile=s" => \$statefile,
               "candidates" => \$candidates,
+              "sigstats" => \$sigstats,
               "help|?" => \$help,
               "version" => \$version );
 
@@ -100,7 +109,7 @@ sub get_options {
   }
 
   if ($version) {
-    print "scas-print version 0.03, Copyright (C) 2020-2022 Risto Vaarandi\n";
+    print "scas-print version 0.04, Copyright (C) 2020-2022 Risto Vaarandi\n";
     exit(0);
   }
 
@@ -135,6 +144,7 @@ sub read_state_file {
 
   %candidates = %{$ref->{"Candidates"}};
   %clusters = %{$ref->{"Clusters"}};
+  %sigstats = %{$ref->{"SignatureStats"}};
 }
 
 
@@ -199,13 +209,47 @@ sub dump_list {
 }
 
 
+sub dump_signatures {
+
+  my($sigs) = $_[0];
+  my($sig, $time, $days, $daily_matches);
+
+  $time = time();
+
+  foreach $sig (sort { $sigs->{$b}->{"Matches"} <=> $sigs->{$a}->{"Matches"} }
+                keys %{$sigs}) {
+
+    print "Signature: $sig ", $sigs->{$sig}->{"SignatureText"}, "\n";
+    print "Active since: ", scalar(localtime($sigs->{$sig}->{"Time"})), "\n";
+    print "Total matches: ", $sigs->{$sig}->{"Matches"}, "\n";
+
+    $days = ($time - $sigs->{$sig}->{"Time"}) / 86400;
+
+    if ($days >= 1) {
+      $daily_matches = $sigs->{$sig}->{"Matches"} / $days;
+    } else {
+      $daily_matches = 0;
+    }
+
+    print "Matches per day: $daily_matches\n";
+   
+    print "\n";
+  }
+}
+
+
 binmode(STDOUT, ":encoding(UTF-8)");
 
 get_options();
 
 read_state_file();
 
-if ($candidates) {
+if ($sigstats) {
+
+  print "Total number of signatures: ", scalar(keys %sigstats), "\n\n";
+  dump_signatures(\%sigstats);
+
+} elsif ($candidates) {
 
   print "Total number of candidates: ", scalar(keys %candidates), "\n\n";
   dump_list(\%candidates);

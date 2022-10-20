@@ -1,6 +1,6 @@
 #!/usr/bin/perl -w
 #
-# scas-group 0.03 - scas-group.pl
+# scas-group 0.04 - scas-group.pl
 # Copyright (C) 2020-2022 Risto Vaarandi
 #
 # This program is free software; you can redistribute it and/or
@@ -167,7 +167,7 @@ sub get_options {
   }
 
   if ($version) {
-    print "scas-group version 0.03, Copyright (C) 2020-2022 Risto Vaarandi\n";
+    print "scas-group version 0.04, Copyright (C) 2020-2022 Risto Vaarandi\n";
     exit(0);
   }
 
@@ -584,12 +584,15 @@ sub process_alert {
   if (!exists($alerts{$ref->{"extip"}}->{"Signatures"}->{$id})) {
     $alerts{$ref->{"extip"}}->{"Signatures"}->{$id} = {};
     $alerts{$ref->{"extip"}}->{"Signatures"}->{$id}->{"Attributes"} = {};
+    $alerts{$ref->{"extip"}}->{"Signatures"}->{$id}->{"Events"} = 0;
   }
 
   $sigref = $alerts{$ref->{"extip"}}->{"Signatures"}->{$id};
   $attref = $sigref->{"Attributes"};
 
   $sigref->{"Signature"} = $ref->{"alert"}->{"signature"};
+
+  ++$sigref->{"Events"};
 
   $attref->{"Proto"}->{$ref->{"proto"}} = 1;
   $attref->{"IntIP"}->{$ref->{"intip"}} = 1;
