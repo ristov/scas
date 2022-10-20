@@ -32,6 +32,13 @@ Availability and licensing
 SCAS is available from https://ristov.github.io/scas, and is distributed under
 the terms of GNU General Public License version 2 (see the file COPYING).
 
+When you publish research results that have involved the use of SCAS, 
+please provide a reference to the following paper in your publication:
+
+Risto Vaarandi, "A Stream Clustering Algorithm for Classifying Network IDS 
+Alerts," Proceedings of the 2021 IEEE International Conference on Cyber 
+Security and Resilience, pp. 14-19, 2021 
+
 Installation
 ------------
 After unpacking the source tarball, copy the scas-group.pl, scas-cluster.pl,
